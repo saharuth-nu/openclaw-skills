@@ -57,7 +57,9 @@ cd mail-inet && npm install
 cd ../file-tools && pip install -r requirements.txt
 ```
 
-### 3. ตั้งค่า mail-inet
+> **ถ้า `pip install` ล้มเหลว** — ดู [Troubleshooting](#troubleshooting) ด้านล่าง
+
+### 3. ตั้งค่า mailkit
 
 ```bash
 cp mail-inet/.env.example mail-inet/.env
@@ -156,8 +158,57 @@ sudo apt install libreoffice
 
 ---
 
+## Troubleshooting
+
+### `pip install` ล้มเหลว
+
+**macOS** — Pillow error เรื่อง image library:
+```bash
+brew install libjpeg zlib
+pip install -r requirements.txt
+```
+
+**Windows** — อัปเกรด pip ก่อน:
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+ถ้ายังไม่ได้ — ติดตั้ง **Microsoft C++ Build Tools**:
+1. ดาวน์โหลดจาก https://visualstudio.microsoft.com/visual-cpp-build-tools/
+2. เลือก **"Desktop development with C++"** → Install
+3. เปิด terminal ใหม่ → `pip install -r requirements.txt`
+
+**Linux** — ติดตั้ง system library ก่อน:
+```bash
+sudo apt install python3-dev libjpeg-dev zlib1g-dev libpng-dev
+pip install -r requirements.txt
+```
+
+### `npm install` ล้มเหลว
+
+ตรวจสอบ Node.js version:
+```bash
+node --version   # ต้องการ >= 18
+```
+
+ถ้า version ต่ำกว่า 18 — อัปเกรด Node.js:
+```bash
+# macOS
+brew upgrade node
+
+# Windows
+winget install OpenJS.NodeJS.LTS
+
+# Linux
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install nodejs
+```
+
+---
+
 ## Usage
 
 ดูคู่มือการใช้งานแต่ละ script ได้ใน:
-- [`mail-inet/SKILL.md`](mail-inet/SKILL.md)
+- [`mailkit/SKILL.md`](mailkit/SKILL.md)
 - [`file-tools/SKILL.md`](file-tools/SKILL.md)
