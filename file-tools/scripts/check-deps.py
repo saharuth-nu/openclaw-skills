@@ -71,6 +71,74 @@ tesseract_install = {
     "Linux":   "sudo apt install tesseract-ocr",
 }.get(system, "https://github.com/tesseract-ocr/tesseract")
 
+# ── Auto-install Tesseract if not found ──────────────────────────────────────
+tesseract_found = bool(shutil.which("tesseract"))
+if not tesseract_found and system == "Darwin":
+    candidates = ["/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract"]
+    tesseract_found = any(os.path.isfile(p) for p in candidates)
+
+tesseract_status = "already installed" if tesseract_found else "not found"
+tesseract_auto   = None
+
+if not tesseract_found:
+    import subprocess
+
+    if system == "Darwin":
+        # ต้องมี Homebrew
+        if shutil.which("brew"):
+            print("[check-deps] Tesseract not found — installing via brew...", file=sys.stderr)
+            r = subprocess.run(["brew", "install", "tesseract"], capture_output=True, text=True)
+            if r.returncode == 0:
+                tesseract_status = "installed"
+                tesseract_auto   = "brew install tesseract"
+            else:
+                tesseract_status = f"install failed: {r.stderr.strip()}"
+        else:
+            tesseract_status = "brew not found — install manually: brew install tesseract"
+
+    elif system == "Windows":
+        # winget ไม่ต้องการ admin สำหรับ user-scope install
+        if shutil.which("winget"):
+            print("[check-deps] Tesseract not found — installing via winget...", file=sys.stderr)
+            r = subprocess.run(
+                ["winget", "install", "--id", "UB-Mannheim.TesseractOCR", "-e", "--silent"],
+                capture_output=True, text=True
+            )
+            if r.returncode == 0:
+                tesseract_status = "installed"
+                tesseract_auto   = "winget install UB-Mannheim.TesseractOCR"
+            else:
+                tesseract_status = f"install failed: {r.stderr.strip()}"
+        else:
+            tesseract_status = "winget not found — install manually: https://github.com/UB-Mannheim/tesseract/wiki"
+
+    elif system == "Linux":
+        # apt — ลองโดยไม่มี sudo ก่อน ถ้าไม่ได้ค่อยแจ้ง
+        if shutil.which("apt-get"):
+            print("[check-deps] Tesseract not found — trying: sudo apt-get install tesseract-ocr ...", file=sys.stderr)
+            r = subprocess.run(
+                ["sudo", "apt-get", "install", "-y", "tesseract-ocr"],
+                capture_output=True, text=True
+            )
+            if r.returncode == 0:
+                tesseract_status = "installed"
+                tesseract_auto   = "sudo apt-get install -y tesseract-ocr"
+            else:
+                tesseract_status = "install failed — run manually: sudo apt-get install tesseract-ocr"
+        elif shutil.which("dnf"):
+            print("[check-deps] Tesseract not found — trying: sudo dnf install tesseract ...", file=sys.stderr)
+            r = subprocess.run(
+                ["sudo", "dnf", "install", "-y", "tesseract"],
+                capture_output=True, text=True
+            )
+            if r.returncode == 0:
+                tesseract_status = "installed"
+                tesseract_auto   = "sudo dnf install -y tesseract"
+            else:
+                tesseract_status = "install failed — run manually: sudo dnf install tesseract"
+        else:
+            tesseract_status = "no supported package manager found — install manually"
+
 result = {
     "ok":               len(missing) == 0,
     "python_version":   sys.version,
@@ -79,11 +147,12 @@ result = {
     "missing":          missing,
     "optional_missing": optional_missing,
     "soffice_found":    soffice_found,
+    "tesseract":        tesseract_status,
     "install": {
         "missing_packages": pip_cmd or "(all installed)",
         "all_packages":     all_cmd,
         "libreoffice":      soffice_install if not soffice_found else "(already installed)",
-        "tesseract_ocr":    tesseract_install if optional_missing else "(already installed)",
+        "tesseract_ocr":    tesseract_auto or (tesseract_install if not tesseract_found else "(already installed)"),
     },
 }
 
